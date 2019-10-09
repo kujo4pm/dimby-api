@@ -1,9 +1,9 @@
 {
-  "name": "hello_world",
+  "name": "dimby_api",
   "version": "1.0.0",
-  "description": "hello world sample for NodeJS",
+  "description": "NodeJS function for DIMBY Api - a very thin api",
   "main": "app.js",
-  "repository": "https://github.com/awslabs/aws-sam-cli/tree/develop/samcli/local/init/templates/cookiecutter-aws-sam-hello-nodejs",
+  "repository": "https://github.com/kujo4pm/dimby-api",
   "author": "SAM CLI",
   "license": "MIT",
   "dependencies": {
