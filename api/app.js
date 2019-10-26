@@ -20,6 +20,12 @@ const apis = {
   OPEN_STREET_VIEW: "OPEN_STREET_VIEW"
 };
 
+const cannedResponses = {
+  NOT_FOUND: apiKey => ({
+    statusCode: 404,
+    body: `ApiKey ${apiKey || ""} Not Valid`
+  })
+};
 const fetchers = {
   [apis.ADDRESS_SEARCH]: {
     fetcher: fetchObj => {
@@ -84,16 +90,13 @@ const authenticate = auth => {
   });
 };
 exports.lambdaHandler = async event => {
-  const { headers, queryStringParameters } = event;
+  const { headers, queryStringParameters = {} } = event;
   const { Authorization: auth } = headers;
   try {
     await authenticate(auth);
-    const { apiKey, ...otherQueryStringParams } = queryStringParameters;
+    const { apiKey, ...otherQueryStringParams } = queryStringParameters || {};
     if (!apiKey || !Object.values(apis).includes(apiKey)) {
-      return {
-        statusCode: 404,
-        body: `ApiKey ${apiKey} Not Valid`
-      };
+      return cannedResponses["NOT_FOUND"](apiKey);
     }
 
     const response = await fetchers[apiKey].fetcher(otherQueryStringParams);
