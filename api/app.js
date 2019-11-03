@@ -57,7 +57,12 @@ const fetchers = {
     }
   },
   [apis.OPEN_PLANNING]: {
-    fetcher: ({ bottomLeftLat, bottomLeftLong, topRightLat, topRightLong }) => {
+    fetcher: ({
+      bottom_left_lat: bottomLeftLat,
+      bottom_left_lng: bottomLeftLong,
+      top_right_lat: topRightLat,
+      top_right_lng: topRightLong
+    }) => {
       const { OPEN_PLANNING_API_TOKEN } = process.env;
       const BASE_URL = "https://api.planningalerts.org.au/applications.js";
       return axios({
@@ -100,12 +105,13 @@ exports.lambdaHandler = async event => {
     }
 
     const response = await fetchers[apiKey].fetcher(otherQueryStringParams);
-    console.log({ response });
     return {
       statusCode: 200,
-      body: {
-        data: JSON.stringify(response.data)
-      }
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Content-Type": "application/json"
+      },
+      body: response.data
     };
   } catch (err) {
     const { status = 500, message = "Error" } = err;
