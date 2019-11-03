@@ -111,7 +111,7 @@ exports.lambdaHandler = async event => {
         "Access-Control-Allow-Origin": "*",
         "Content-Type": "application/json"
       },
-      body: response.data
+      body: JSON.stringify(response.data)
     };
   } catch (err) {
     const { status = 500, message = "Error" } = err;
