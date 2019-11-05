@@ -20,7 +20,7 @@ const apis = {
   OPEN_STREET_VIEW: "OPEN_STREET_VIEW"
 };
 const defaultHeaders = {
-  "Access-Control-Allow-Origin": process.env.FRONT_END_URL || "",
+  "Access-Control-Allow-Origin": process.env.FRONT_END_URL || "*",
   "Content-Type": "application/json"
 };
 
