@@ -14,7 +14,7 @@ Globals:
       AllowHeaders: "'Content-Type,Authorization,Access-Control-Allow-Origin'"
       AllowOrigin: "'http://localhost:3001'"
   Function:
-    Timeout: 3
+    Timeout: 8
 
 Resources:
   DimbyApiFunction:

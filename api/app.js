@@ -19,6 +19,10 @@ const apis = {
   OPEN_PLANNING: "OPEN_PLANNING",
   OPEN_STREET_VIEW: "OPEN_STREET_VIEW"
 };
+const defaultHeaders = {
+  "Access-Control-Allow-Origin": process.env.FRONT_END_URL || "",
+  "Content-Type": "application/json"
+};
 
 const cannedResponses = {
   NOT_FOUND: apiKey => ({
@@ -28,10 +32,10 @@ const cannedResponses = {
 };
 const fetchers = {
   [apis.ADDRESS_SEARCH]: {
-    fetcher: fetchObj => {
+    fetcher: async fetchObj => {
       const BASE_URL = "https://nominatim.openstreetmap.org/";
       const { limit = 3, q, polygonGeojson = 0 } = fetchObj;
-      return axios({
+      const response = await axios({
         method: "get",
         url: `${BASE_URL}search`,
         params: {
@@ -42,22 +46,37 @@ const fetchers = {
           polygon_geojson: polygonGeojson
         }
       });
+      return JSON.stringify(response.data);
     }
   },
   [apis.OPEN_STREET_VIEW]: {
-    fetcher: fetchObj => {
+    fetcher: async fetchObj => {
       const BASE_URL = "https://maps.googleapis.com/maps/api/streetview";
       const { OPEN_STREET_VIEW_KEY } = process.env;
       const { address } = fetchObj;
-
-      console.log("fetching image for:", address);
-      return axios(
-        `${BASE_URL}?location=${address}&size=400x150&key=${OPEN_STREET_VIEW_KEY}`
+      console.log(
+        "fetching image for:",
+        address,
+        ` at ${BASE_URL}?location=${address}&size=400x150&key=${OPEN_STREET_VIEW_KEY}`
       );
-    }
+      const response = await axios(
+        `${BASE_URL}?location=${address}&size=400x150&key=${OPEN_STREET_VIEW_KEY}`,
+        {
+          responseType: "arraybuffer"
+        }
+      );
+      return `data:${response.headers["content-type"]};base64,${Buffer.from(
+        String.fromCharCode(...new Uint8Array(response.data)),
+        "binary"
+      ).toString("base64")}`;
+    },
+    headers: () => ({
+      "Content-Type": "image/jpeg"
+    }),
+    isBase64Encoded: true
   },
   [apis.OPEN_PLANNING]: {
-    fetcher: ({
+    fetcher: async ({
       bottom_left_lat: bottomLeftLat,
       bottom_left_lng: bottomLeftLong,
       top_right_lat: topRightLat,
@@ -65,7 +84,7 @@ const fetchers = {
     }) => {
       const { OPEN_PLANNING_API_TOKEN } = process.env;
       const BASE_URL = "https://api.planningalerts.org.au/applications.js";
-      return axios({
+      const response = await axios({
         method: "get",
         url: BASE_URL,
         params: {
@@ -76,12 +95,13 @@ const fetchers = {
           top_right_lng: topRightLong
         }
       });
+      return JSON.stringify(response.data);
     }
   }
 };
 
 /*
- * TODO: Put in some more serious JWT authentication
+ * TODO: Put in some more serious authentication
  */
 
 const authenticate = auth => {
@@ -98,25 +118,36 @@ exports.lambdaHandler = async event => {
   const { headers, queryStringParameters = {} } = event;
   const { Authorization: auth } = headers;
   try {
-    await authenticate(auth);
-    const { apiKey, ...otherQueryStringParams } = queryStringParameters || {};
+    const {
+      apiKey,
+      auth_token: authTokenQueryString,
+      ...otherQueryStringParams
+    } = queryStringParameters || {};
+    await authenticate(auth || authTokenQueryString);
     if (!apiKey || !Object.values(apis).includes(apiKey)) {
       return cannedResponses["NOT_FOUND"](apiKey);
     }
 
-    const response = await fetchers[apiKey].fetcher(otherQueryStringParams);
+    const { headers = () => {}, fetcher, isBase64Encoded = false } = fetchers[
+      apiKey
+    ];
+
+    const data = await fetcher(otherQueryStringParams);
     return {
       statusCode: 200,
       headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Content-Type": "application/json"
+        ...defaultHeaders,
+        ...headers(data)
       },
-      body: JSON.stringify(response.data)
+      body: data,
+      isBase64Encoded
     };
   } catch (err) {
     const { status = 500, message = "Error" } = err;
+    console.error(err);
     return {
       statusCode: status,
+      headers: defaultHeaders,
       body: JSON.stringify({
         message
       })
