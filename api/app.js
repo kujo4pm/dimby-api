@@ -81,7 +81,7 @@ const fetchers = {
       bottom_left_lng: bottomLeftLong,
       top_right_lat: topRightLat,
       top_right_lng: topRightLong,
-      page: page
+      ...otherArguments
     }) => {
       const { OPEN_PLANNING_API_TOKEN } = process.env;
       const BASE_URL = "https://api.planningalerts.org.au/applications.js";
@@ -94,7 +94,7 @@ const fetchers = {
           bottom_left_lng: bottomLeftLong,
           top_right_lat: topRightLat,
           top_right_lng: topRightLong,
-          page: page
+          ...otherArguments
         }
       });
       return JSON.stringify(response.data);
