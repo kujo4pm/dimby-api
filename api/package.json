@@ -12,7 +12,10 @@
   },
   "scripts": {
     "test": "mocha tests/unit/",
-    "dev": "nodemon 'sam local start-api -p 8000'"
+    "dev": "nodemon 'sam local start-api -p 8000'",
+    "local": "DOCKER_HOST=tcp://localhost:2375 sam local start-api  --template ../template.yaml",
+    "deploy": "sam package --output-template '../packaged.yaml' --template-file ../template.yaml --s3-bucket kujo4pm-lambda-deploys && sam deploy --template-file ../packaged.yaml --region ap-southeast-2 --capabilities CAPABILITY_IAM --stack-name dimby-api",
+    "getRemoteEndpoint": "aws cloudformation describe-stacks --stack-name dimby-api --region ap-southeast-2 --query \"Stacks[].Outputs\""
   },
   "devDependencies": {
     "chai": "^4.2.0",
